@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PostHogService } from '../../services/posthog.service';
 
 interface Service {
   number: string;
@@ -19,6 +20,8 @@ interface Service {
   styleUrl: './service.scss',
 })
 export class ServicesComponent {
+  private readonly posthogService = inject(PostHogService);
+
   categories = [
     'All Services',
     'Maintenance',
@@ -243,5 +246,8 @@ export class ServicesComponent {
 
   selectCategory(category: string): void {
     this.selectedCategory = category;
+    this.posthogService.posthog.capture('service_category_selected', {
+      service_category: category,
+    });
   }
 }
