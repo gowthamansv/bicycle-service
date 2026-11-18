@@ -2,6 +2,8 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Appointmentservice } from './appointmentservice';
+import { PostHogService } from '../../services/posthog.service';
+import { PostHogLogService } from '../../services/posthog-log.service';
 
 @Component({
   selector: 'app-appointment',
@@ -16,6 +18,8 @@ export class AppointmentComponent {
   isSubmitting = false;
   showNotification = false;
   private appointmentService = inject(Appointmentservice);
+  private readonly posthogService = inject(PostHogService);
+  private readonly posthogLogService = inject(PostHogLogService);
   today = new Date().toISOString().split('T')[0];
 
   appointmentForm = this.fb.group({
@@ -36,11 +40,18 @@ export class AppointmentComponent {
       this.appointmentService.bookAppointment(data).subscribe({
         next: (res: any) => {
           this.isSubmitting = false;
+          this.posthogService.posthog.capture('appointment_requested');
+          this.posthogLogService.info('appointment_request_completed', {
+            submission_channel: 'web_form',
+          });
           this.showSuccessNotification();
           window.open(res.whatsAppUrl, '_blank');
         },
         error: () => {
           this.isSubmitting = false;
+          this.posthogLogService.warn('appointment_request_failed', {
+            submission_channel: 'web_form',
+          });
         },
       });
     }

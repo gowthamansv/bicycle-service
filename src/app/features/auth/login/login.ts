@@ -10,6 +10,8 @@ import { PasswordModule } from 'primeng/password';
 import { loginColumn } from './login.column';
 import { AuthService } from '../auth.service';
 import { Navbar } from '../../../shared/navbar/navbar';
+import { PostHogService } from '../../../services/posthog.service';
+import { PostHogLogService } from '../../../services/posthog-log.service';
 @Component({
   selector: 'app-login',
   imports: [
@@ -29,6 +31,8 @@ export class LoginComponent {
   route = inject(ActivatedRoute);
   private returnUrl = '/';
   loginService = inject(AuthService);
+  private readonly posthogService = inject(PostHogService);
+  private readonly posthogLogService = inject(PostHogLogService);
   formControlArray = signal(
     Object.values(loginColumn).map((column) => [
       column.field,
@@ -52,6 +56,10 @@ export class LoginComponent {
         next: (res: any) => {
           console.log('Login Response:', res);
           sessionStorage.setItem('token', res.token);
+          this.posthogService.posthog.capture('login_succeeded');
+          this.posthogLogService.info('login_completed', {
+            authentication_method: 'password',
+          });
           this.loginForm.reset();
           this.router.navigate([this.returnUrl ? this.returnUrl : '/appointment']);
         },
